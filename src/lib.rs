@@ -277,7 +277,7 @@ impl TileBuffer {
     }
     // match these to wgsl source
     // one day they will be a specialization constant
-    const TILE_SIZE: u64 = 2048;
+    const TILE_SIZE: u64 = 2048; // should match definition in splat.wgsl
     const SIZEOF_TILE: u64 = 8 + 4 * 4 + 4 * 4 + 8 * Self::TILE_SIZE;
     fn tile_buf(device: &wgpu::Device, num_tiles: [u32; 2]) -> wgpu::Buffer {
         let tile_buf_size = Self::SIZEOF_TILE * (num_tiles[0] * num_tiles[1]) as u64;
@@ -483,7 +483,7 @@ impl DrawGaussianResources {
     ) {
         use wgpu_profiler::wgpu_profiler;
         let texture_dim = texture.texture().size();
-        let num_tiles = [texture_dim.width / 32, texture_dim.height / 32];
+        let num_tiles = [texture_dim.width / 16, texture_dim.height / 16];
         let total_tiles = num_tiles[0] * num_tiles[1];
         tile_buffer.resize_tiles(device, num_tiles);
 
@@ -552,7 +552,7 @@ impl DrawGaussianResources {
 
             wgpu_profiler!("draw tiles", profiler, &mut cpass, &device, {
                 cpass.set_pipeline(&draw_tiles);
-                cpass.dispatch_workgroups(output_size[0] / 32, output_size[1] / 32, 1);
+                cpass.dispatch_workgroups(num_tiles[0], num_tiles[1], 1);
             });
         }
     }

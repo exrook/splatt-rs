@@ -36,6 +36,7 @@ struct Camera {
     camera_4_invert: mat4x4<f32>,
 }
 
+// should match definition in lib.rs
 const TILE_SIZE: u32 = 2048u;
 
 struct TileIndirect {
@@ -213,7 +214,7 @@ fn preprocess_splat(splat_id: u32) {
 
     splat_2d_cov_alphas[splat_id] = vec4(conic, pos_alpha.a);
 
-    let scale = 3.0;
+    let scale = 2.0;
     var aabb = sqrt(abs(vec2(cov2d.x, cov2d.z))) * scale;
 
     let aabb_tiles =vec2<i32>(ceil(aabb * vec2<f32>(dd.num_tiles)));
@@ -344,7 +345,7 @@ fn store_wg_splats(tile_idx: u32, local_idx: u32) {
 }
 
 @compute
-@workgroup_size(32, 32)
+@workgroup_size(16, 16)
 fn draw_tiles(@builtin(global_invocation_id) global_id: vec3<u32>, @builtin(workgroup_id) wg_id: vec3<u32>, @builtin(num_workgroups) num_wg: vec3<u32>, @builtin(local_invocation_index) local_idx: u32) {
     let tile_id = wg_id.xy;
     let tile_idx = tile_id.x + tile_id.y * dd.num_tiles.x;
@@ -379,7 +380,7 @@ fn draw_tiles(@builtin(global_invocation_id) global_id: vec3<u32>, @builtin(work
         }
         T = T * (1.0 - alpha);
     }
-    // let background_color = vec4(vec3(1.0, 0.0, 1.0), 1.0);
+    // let background_color = vec4(vec3(0.0), 0.001);
     // out_color = alpha_blend_straight(vec4(out_color, 1.0 - T), background_color).xyz;
 
     // DEBUG: show tiles at or near capcity

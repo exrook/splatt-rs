@@ -13,11 +13,11 @@ wgpu-profiler = "0.14"
 bytemuck = { version = "1.13", features = ["derive"] }
 
 ply-rs = "0.1.3"
-camera.path = "../misc_3d/camera"
-camera_input.path = "../misc_3d/camera_input"
+camera.git = "https://github.com/exrook/misc_3d"
+camera_input.git = "https://github.com/exrook/misc_3d"
 
 [dev-dependencies]
-windowed.path = "../misc_3d/windowed"
+windowed.git = "https://github.com/exrook/misc_3d"
 env_logger = "0.10"
 log = "0.4"
 winit_input_helper = "0.14"
