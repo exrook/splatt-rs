@@ -1,0 +1,34 @@
+[package]
+name = "splatt"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+wgpu_shader_boilerplate.git = "https://github.com/exrook/wgpu_shader_boilerplate"
+wgpu = "0.17"
+glam = { version = "0.24", features = ["bytemuck"] }
+wgpu-profiler = "0.14"
+bytemuck = { version = "1.13", features = ["derive"] }
+
+ply-rs = "0.1.3"
+camera.path = "../misc_3d/camera"
+camera_input.path = "../misc_3d/camera_input"
+
+[dev-dependencies]
+windowed.path = "../misc_3d/windowed"
+env_logger = "0.10"
+log = "0.4"
+winit_input_helper = "0.14"
+winit = "0.28"
+pollster = "0.3"
+debugui = { git = "https://github.com/exrook/debugui" }
+
+[patch.crates-io]
+wgpu = { git = "https://github.com/gfx-rs/wgpu", rev = "27f2ce3" }
+naga = { git = "https://github.com/gfx-rs/naga", rev = "df8107b7" }
+naga_oil = { git = "https://github.com/exrook/naga_oil", branch = "update_indexmap" }
+egui-wgpu = { git = "https://github.com/emilk/egui/" }
+egui-winit = { git = "https://github.com/emilk/egui/" }
+egui = { git = "https://github.com/emilk/egui/" }
