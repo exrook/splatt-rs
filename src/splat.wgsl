@@ -284,24 +284,32 @@ var<workgroup> wg_splats: array<SplatPtr, TILE_SIZE>;
 fn sort_within_tiles(@builtin(global_invocation_id) global_id: vec3<u32>, @builtin(workgroup_id) wg_id: vec3<u32>, @builtin(num_workgroups) num_wg: vec3<u32>, @builtin(local_invocation_index) local_idx: u32) {
     let tile_id = wg_id.x;
 
-    load_wg_splats(tile_id, local_idx);
-    workgroupBarrier();
-    sort(local_idx);
-    store_wg_splats(tile_id, local_idx);
+    let sort_size = min(TILE_SIZE, tiles[tile_id].next_elem * 1u);
+    // let sort_size = TILE_SIZE;
+    if sort_size > 1u {
+        let sort_size_pow2 = 2u<<firstLeadingBit(sort_size - 1u);
+        load_wg_splats(tile_id, local_idx, sort_size_pow2);
+        workgroupBarrier();
+        sort(local_idx, sort_size_pow2);
+        store_wg_splats(tile_id, local_idx, sort_size_pow2);
+    }
 
 }
 
-fn sort(real_local_idx: u32) {
+fn sort(real_local_idx: u32, sort_size: u32) {
     // double the size of orange block until we hit the array size
-    for (var orange_size = 2u; orange_size <= TILE_SIZE; orange_size *= 2u) { // k is doubled every iteration
+    for (var orange_size = 2u; orange_size <= sort_size; orange_size *= 2u) { // k is doubled every iteration
 
+        // FIXME: fix the indexing here and below so we don't do more than one iteration of this loop when sort_size < TILE_SIZE
         for (var i = 0u; i <= (TILE_SIZE / (INNER_SORT_WORKGROUP_SIZE * 2u)); i += 1u) {
             let local_idx = real_local_idx * (TILE_SIZE / (INNER_SORT_WORKGROUP_SIZE * 2u)) + i;
-            // execute orange block
-            let jump = orange_size * (local_idx / (orange_size / 2u));
-            let idx1 = (local_idx % (orange_size / 2u)) + jump;
-            let opponent = (orange_size - (1u + 2u * ((local_idx) % (orange_size / 2u))));
-            swap(idx1, idx1 + opponent);
+            if local_idx < sort_size {
+                // execute orange block
+                let jump = orange_size * (local_idx / (orange_size / 2u));
+                let idx1 = (local_idx % (orange_size / 2u)) + jump;
+                let opponent = (orange_size - (1u + 2u * ((local_idx) % (orange_size / 2u))));
+                swap(idx1, idx1 + opponent);
+            }
         }
         workgroupBarrier();
 
@@ -309,11 +317,13 @@ fn sort(real_local_idx: u32) {
         for (var red_size = orange_size/2u; red_size > 1u; red_size /= 2u)  {
             for (var i = 0u; i <= (TILE_SIZE / (INNER_SORT_WORKGROUP_SIZE * 2u)); i += 1u) {
                 let local_idx = real_local_idx * (TILE_SIZE / (INNER_SORT_WORKGROUP_SIZE * 2u)) + i;
-                let jump = red_size * (local_idx / (red_size / 2u));
-                let idx1 = (local_idx % (red_size / 2u)) + jump;
+                if local_idx < sort_size {
+                    let jump = red_size * (local_idx / (red_size / 2u));
+                    let idx1 = (local_idx % (red_size / 2u)) + jump;
 
-                let opponent = idx1 + (red_size / 2u);
-                swap(idx1, opponent);
+                    let opponent = idx1 + (red_size / 2u);
+                    swap(idx1, opponent);
+                }
             }
             workgroupBarrier();
         }
@@ -330,17 +340,21 @@ fn swap(lower_idx: u32, upper_idx: u32) {
     }
 }
 
-fn load_wg_splats(tile_idx: u32, local_idx: u32) {
+fn load_wg_splats(tile_idx: u32, local_idx: u32, count: u32) {
     for (var i = 0u; i < (TILE_SIZE / (INNER_SORT_WORKGROUP_SIZE)); i += 1u) {
-        let idx = local_idx + i*INNER_SORT_WORKGROUP_SIZE;
-        wg_splats[idx] = tiles[tile_idx].splats[idx];
+        if local_idx < count {
+            let idx = local_idx + i*INNER_SORT_WORKGROUP_SIZE;
+            wg_splats[idx] = tiles[tile_idx].splats[idx];
+        }
     }
 }
 
-fn store_wg_splats(tile_idx: u32, local_idx: u32) {
+fn store_wg_splats(tile_idx: u32, local_idx: u32, count: u32) {
     for (var i = 0u; i < (TILE_SIZE / (INNER_SORT_WORKGROUP_SIZE)); i += 1u) {
-        let idx = local_idx + i*INNER_SORT_WORKGROUP_SIZE;
-        tiles[tile_idx].splats[idx] = wg_splats[idx];
+        if local_idx < count {
+            let idx = local_idx + i*INNER_SORT_WORKGROUP_SIZE;
+            tiles[tile_idx].splats[idx] = wg_splats[idx];
+        }
     }
 }
 
