@@ -99,9 +99,7 @@ shader::compute_pipelines!(Pipelines {
     draw_tiles
 });
 
-#[shader::m::linkme::distributed_slice(shader::SHADERS)]
-#[linkme(crate = shader::m::linkme)]
-pub static SHADER: shader::Shader = shader::Shader::from_path(file!(), "splat.wgsl", "", None);
+shader::shader_file!(pub SHADER "splat.wgsl");
 
 pub struct DrawGaussianResources {
     pipeline: shader::PipelineCacheWithLayout<Pipelines>,
